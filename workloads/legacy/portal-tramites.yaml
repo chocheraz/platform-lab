@@ -1,0 +1,20 @@
+# Problemas deliberados: corre como root (imagen oficial de nginx), sin requests/limits,
+# sin probes, sin securityContext.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portal-tramites
+  namespace: legacy-tramites
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: portal-tramites }
+  template:
+    metadata:
+      labels: { app: portal-tramites }
+    spec:
+      containers:
+      - name: web
+        image: nginx:1.27
+        ports:
+        - containerPort: 80

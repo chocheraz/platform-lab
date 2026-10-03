@@ -1,0 +1,13 @@
+# Pod Security Admission NATIVA en modo enforce=restricted.
+# Si portal-moderno no cumpliera, sus pods no se crearían: eso es la verificación del lab 0.3.
+# En el Módulo 1 comparamos esto con hacer lo mismo desde Kyverno.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: apps-modernas
+  labels:
+    equipo: portal
+    criticidad: media
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: restricted

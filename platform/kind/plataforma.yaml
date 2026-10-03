@@ -1,0 +1,26 @@
+# Clúster principal del curso. La imagen de nodo NO va aquí: la pasa scripts/cluster-up.sh
+# desde versions.env (--image), para que haya una sola fuente de verdad.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  # Rangos distintos a los de 'satelite' (M8). En un solo clúster da igual;
+  # el día que haya enrutamiento entre clústeres, solaparlos es un error caro.
+  podSubnet: "10.10.0.0/16"
+  serviceSubnet: "10.110.0.0/16"
+nodes:
+- role: control-plane
+  labels:
+    ingress-ready: "true"
+  extraPortMappings:           # Reservados para un ingress en módulos posteriores.
+  - containerPort: 80
+    hostPort: 8080
+    listenAddress: "127.0.0.1" # No exponer el lab a la red de la oficina.
+  - containerPort: 443
+    hostPort: 8443
+    listenAddress: "127.0.0.1"
+- role: worker
+  labels:
+    topology.kubernetes.io/zone: zona-a
+- role: worker
+  labels:
+    topology.kubernetes.io/zone: zona-b

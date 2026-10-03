@@ -1,0 +1,41 @@
+# Cumple Pod Security Standards "restricted": no root, sin escalamiento,
+# capabilities eliminadas, seccomp RuntimeDefault. Con requests/limits y probes.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portal-moderno
+  namespace: apps-modernas
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: portal-moderno }
+  template:
+    metadata:
+      labels:
+        app: portal-moderno
+        equipo: portal
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101          # uid del usuario nginx en la imagen unprivileged
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: web
+        image: nginxinc/nginx-unprivileged:1.27-alpine
+        ports:
+        - containerPort: 8080
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+        resources:
+          requests: { cpu: 25m, memory: 32Mi }
+          limits:   { memory: 64Mi }
+        readinessProbe:
+          httpGet: { path: /, port: 8080 }
+          periodSeconds: 5
+        livenessProbe:
+          httpGet: { path: /, port: 8080 }
+          periodSeconds: 10

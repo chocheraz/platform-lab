@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: legacy-tramites
+  labels:
+    equipo: tramites
+    criticidad: alta
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: legacy-pagos
+  labels:
+    equipo: pagos
+    criticidad: alta

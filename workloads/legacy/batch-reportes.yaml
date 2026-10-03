@@ -1,0 +1,21 @@
+# Problemas deliberados: tag :latest, contenedor privilegiado, sin límites.
+# "Lo necesitaba para montar un disco en 2019 y nadie lo quitó."
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: batch-reportes
+  namespace: legacy-tramites
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: batch-reportes }
+  template:
+    metadata:
+      labels: { app: batch-reportes }
+    spec:
+      containers:
+      - name: batch
+        image: busybox:latest
+        command: ["sh", "-c", "while true; do echo generando reporte; sleep 60; done"]
+        securityContext:
+          privileged: true

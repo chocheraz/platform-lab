@@ -1,0 +1,29 @@
+# Problemas deliberados: hostPath al filesystem del nodo, capability NET_ADMIN,
+# sin requests/limits, sin etiquetas de dueño en el pod.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-pagos
+  namespace: legacy-pagos
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: api-pagos }
+  template:
+    metadata:
+      labels: { app: api-pagos }
+    spec:
+      containers:
+      - name: api
+        image: nginx:1.27
+        securityContext:
+          capabilities:
+            add: ["NET_ADMIN"]
+        volumeMounts:
+        - name: logs-nodo
+          mountPath: /host-logs
+      volumes:
+      - name: logs-nodo
+        hostPath:
+          path: /var/log
+          type: Directory

@@ -1,0 +1,9 @@
+# El "legado": lo que encuentras el primer día en un ministerio o un banco.
+# Cada problema es deliberado y está anotado. El Módulo 1 los va a encontrar con Kyverno.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- namespaces.yaml
+- portal-tramites.yaml
+- batch-reportes.yaml
+- api-pagos.yaml

@@ -1,0 +1,27 @@
+# Se despliega con `make smoke`, no con `make seed`. Imagen servida por el registry local.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: smoke
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry-smoke
+  namespace: smoke
+  labels:
+    curso.lab/modulo: "m0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: registry-smoke }
+  template:
+    metadata:
+      labels: { app: registry-smoke }
+    spec:
+      containers:
+      - name: web
+        image: localhost:5001/lab/nginx-unprivileged:1.27-alpine
+        imagePullPolicy: Always   # obliga a pasar por el registry en cada arranque
+        ports:
+        - containerPort: 8080
