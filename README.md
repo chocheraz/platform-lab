@@ -21,13 +21,13 @@ make status    # qué está corriendo y cuánta memoria usa
 ```
 
 Entre sesiones: `make pause` / `make resume`. Si algo se enreda: `make reset` lo reconstruye
-desde cero en pocos minutos.
+desde cero en pocos minutos. 
 
 ## Estado
 
 | Módulo | Tema | Estado |
 |---|---|---|
-| M0 | Entorno y punto de partida | en curso — tiempo de `make reset`: __ min |
+| M0 | Entorno y punto de partida | en curso — tiempo de `make reset reconstruye el punto de partida desde cero en ~56 s (con imágenes en caché)" - Completado |
 | M1 | Admisión y Kyverno: fundamentos | — |
 | M2 | Kyverno avanzado | — |
 | M3 | Kyverno como código | — |
