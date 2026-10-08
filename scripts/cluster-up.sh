@@ -16,7 +16,8 @@ if [[ "$(docker inspect -f '{{.State.Running}}' "$REGISTRY_NAME" 2>/dev/null || 
 else ok "ya corría"; fi
 
 step "2/5 Clúster $CLUSTER"
-if kind get clusters 2>/dev/null | grep -qx "$CLUSTER"; then ok "ya existe"
+clusters="$(kind get clusters 2>/dev/null || true)"
+if grep -qx "$CLUSTER" <<<"$clusters"; then ok "ya existe"
 else
   kind create cluster --name "$CLUSTER" --config "$CFG" --image "$KIND_NODE_IMAGE" --wait 180s
   ok "creado"

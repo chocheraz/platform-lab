@@ -20,7 +20,7 @@ verify() { # archivo hash_esperado
 }
 
 step "kind $KIND_VERSION ($OS/$ARCH)"
-if "$BIN/kind" version 2>/dev/null | grep -q "$KIND_VERSION"; then ok "ya instalado"; else
+if version_matches "$KIND_VERSION" "$BIN/kind" version; then ok "ya instalado"; else
   base="https://github.com/kubernetes-sigs/kind/releases/download/$KIND_VERSION/kind-$OS-$ARCH"
   curl -fsSLo "$TMP/kind" "$base"
   verify "$TMP/kind" "$(curl -fsSL "$base.sha256sum" | awk '{print $1}')"
@@ -28,7 +28,7 @@ if "$BIN/kind" version 2>/dev/null | grep -q "$KIND_VERSION"; then ok "ya instal
 fi
 
 step "kubectl $KUBECTL_VERSION"
-if "$BIN/kubectl" version --client 2>/dev/null | grep -q "$KUBECTL_VERSION"; then ok "ya instalado"; else
+if version_matches "$KUBECTL_VERSION" "$BIN/kubectl" version --client; then ok "ya instalado"; else
   base="https://dl.k8s.io/release/$KUBECTL_VERSION/bin/$OS/$ARCH/kubectl"
   curl -fsSLo "$TMP/kubectl" "$base"
   verify "$TMP/kubectl" "$(curl -fsSL "$base.sha256")"
@@ -36,12 +36,23 @@ if "$BIN/kubectl" version --client 2>/dev/null | grep -q "$KUBECTL_VERSION"; the
 fi
 
 step "helm $HELM_VERSION"
-if "$BIN/helm" version --short 2>/dev/null | grep -q "$HELM_VERSION"; then ok "ya instalado"; else
+if version_matches "$HELM_VERSION" "$BIN/helm" version --short; then ok "ya instalado"; else
   f="helm-$HELM_VERSION-$OS-$ARCH.tar.gz"
   curl -fsSLo "$TMP/$f" "https://get.helm.sh/$f"
   verify "$TMP/$f" "$(curl -fsSL "https://get.helm.sh/$f.sha256sum" | awk '{print $1}')"
   tar -xzf "$TMP/$f" -C "$TMP"
   install -m 0755 "$TMP/$OS-$ARCH/helm" "$BIN/helm"; ok "instalado y verificado"
+fi
+
+step "kyverno CLI $KYVERNO_VERSION"
+if version_matches "Version: ${KYVERNO_VERSION#v}" "$BIN/kyverno" version; then ok "ya instalado"; else
+  case "$ARCH" in amd64) KARCH=x86_64 ;; *) KARCH=$ARCH ;; esac
+  f="kyverno-cli_${KYVERNO_VERSION}_${OS}_${KARCH}.tar.gz"
+  base="https://github.com/kyverno/kyverno/releases/download/$KYVERNO_VERSION"
+  curl -fsSLo "$TMP/$f" "$base/$f"
+  verify "$TMP/$f" "$(curl -fsSL "$base/checksums.txt" | awk -v f="$f" '$2==f {print $1}')"
+  tar -xzf "$TMP/$f" -C "$TMP" kyverno
+  install -m 0755 "$TMP/kyverno" "$BIN/kyverno"; ok "instalado y verificado"
 fi
 
 echo; ok "Herramientas listas en $BIN (el Makefile ya las pone primero en el PATH)"

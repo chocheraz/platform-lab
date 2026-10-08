@@ -28,10 +28,11 @@ if [[ "$(uname -s)" == "Linux" ]]; then
 fi
 
 step "Puertos del host que usa el lab"
+containers="$(docker ps --format '{{.Names}}' 2>/dev/null || true)"
 for p in "$REGISTRY_PORT" 8080 8443; do
   if (echo >"/dev/tcp/127.0.0.1/$p") 2>/dev/null; then
-    if [[ "$p" == "$REGISTRY_PORT" ]] && docker ps --format '{{.Names}}' | grep -qx "$REGISTRY_NAME"; then ok "$p ocupado por $REGISTRY_NAME (esperado)"
-    elif [[ "$p" != "$REGISTRY_PORT" ]] && docker ps --format '{{.Names}}' | grep -qx "plataforma-control-plane"; then ok "$p ocupado por plataforma (esperado)"
+    if [[ "$p" == "$REGISTRY_PORT" ]] && grep -qx "$REGISTRY_NAME" <<<"$containers"; then ok "$p ocupado por $REGISTRY_NAME (esperado)"
+    elif [[ "$p" != "$REGISTRY_PORT" ]] && grep -qx "plataforma-control-plane" <<<"$containers"; then ok "$p ocupado por plataforma (esperado)"
     else fail "$p ocupado por otro proceso"; errors=$((errors+1)); fi
   else ok "$p libre"; fi
 done
@@ -42,9 +43,10 @@ for t in make curl jq git; do
 done
 
 step "Herramientas fijadas"
-if kind version 2>/dev/null | grep -q "$KIND_VERSION"; then ok "kind $KIND_VERSION"; else fail "kind $KIND_VERSION ausente → make tools"; errors=$((errors+1)); fi
-if kubectl version --client 2>/dev/null | grep -q "$KUBECTL_VERSION"; then ok "kubectl $KUBECTL_VERSION"; else fail "kubectl $KUBECTL_VERSION ausente → make tools"; errors=$((errors+1)); fi
-if helm version --short 2>/dev/null | grep -q "$HELM_VERSION"; then ok "helm $HELM_VERSION"; else fail "helm $HELM_VERSION ausente → make tools"; errors=$((errors+1)); fi
+if version_matches "$KIND_VERSION" kind version; then ok "kind $KIND_VERSION"; else fail "kind $KIND_VERSION ausente → make tools"; errors=$((errors+1)); fi
+if version_matches "$KUBECTL_VERSION" kubectl version --client; then ok "kubectl $KUBECTL_VERSION"; else fail "kubectl $KUBECTL_VERSION ausente → make tools"; errors=$((errors+1)); fi
+if version_matches "$HELM_VERSION" helm version --short; then ok "helm $HELM_VERSION"; else fail "helm $HELM_VERSION ausente → make tools"; errors=$((errors+1)); fi
+if version_matches "Version: ${KYVERNO_VERSION#v}" kyverno version; then ok "kyverno CLI $KYVERNO_VERSION"; else fail "kyverno CLI $KYVERNO_VERSION ausente → make tools"; errors=$((errors+1)); fi
 
 echo
 if (( errors == 0 )); then ok "Todo en orden"; else die "$errors problema(s) por resolver"; fi
