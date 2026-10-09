@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: equipo-piloto
+  labels:
+    equipo: piloto
+    criticidad: baja
+    # Esta etiqueta es la que activa las políticas *-enforce (ver policies/enforce).
+    politicas.curso.lab/modo: enforce

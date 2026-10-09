@@ -1,0 +1,31 @@
+# Cumple las seis políticas del M1. Sirve para comprobar que Enforce no rompe
+# lo que está bien, y como víctima inocente en el ejercicio de ruptura 1.R.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: piloto-ok
+  namespace: equipo-piloto
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: piloto-ok }
+  template:
+    metadata:
+      labels: { app: piloto-ok, equipo: piloto }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+      - name: web
+        image: nginxinc/nginx-unprivileged:1.27-alpine
+        ports:
+        - containerPort: 8080
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: { drop: ["ALL"] }
+        resources:
+          requests: { cpu: 25m, memory: 32Mi }
+          limits: { memory: 64Mi }

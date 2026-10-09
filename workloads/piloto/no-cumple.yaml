@@ -1,0 +1,20 @@
+# NO está en kustomization.yaml a propósito: es la carga que se intenta desplegar
+# en el Lab 1.4 para ver cómo responden PSA y Kyverno. El namespace lo pones tú con -n.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: no-cumple
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: no-cumple }
+  template:
+    metadata:
+      labels: { app: no-cumple }
+    spec:
+      containers:
+      - name: app
+        image: busybox:latest
+        command: ["sh", "-c", "sleep 3600"]
+        securityContext:
+          privileged: true

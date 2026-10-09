@@ -1,0 +1,15 @@
+# Políticas base del M1: todas en Audit, con failurePolicy Ignore.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+labels:
+- pairs:
+    curso.lab/modulo: "m1"
+    politicas.curso.lab/accion: audit
+  includeSelectors: false
+resources:
+- disallow-privileged.yaml
+- disallow-host-path.yaml
+- restrict-capabilities.yaml
+- require-run-as-non-root.yaml
+- disallow-latest-tag.yaml
+- require-memory-limits.yaml

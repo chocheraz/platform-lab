@@ -13,7 +13,7 @@ Requisitos: Docker (o Docker Desktop / WSL2) con al menos 8 GiB asignados (16 Gi
 curso completo), cgroup v2, `make`, `curl`, `bash`.
 
 ```bash
-make tools     # kind, kubectl y helm fijados en ./.bin, con checksum
+make tools     # kind, kubectl, helm y kyverno CLI fijados en ./.bin, con checksum
 make doctor    # chequeo previo de la máquina
 make up        # registry local + clúster "plataforma" (1 control plane + 2 workers)
 make seed      # cargas de partida: legado deliberadamente inseguro + una app moderna
@@ -28,7 +28,7 @@ desde cero en pocos minutos.
 | Módulo | Tema | Estado |
 |---|---|---|
 | M0 | Entorno y punto de partida | en curso — tiempo de `make reset reconstruye el punto de partida desde cero en ~56 s (con imágenes en caché)" - Completado |
-| M1 | Admisión y Kyverno: fundamentos | — |
+| M1 | Admisión y Kyverno: fundamentos | en curso |
 | M2 | Kyverno avanzado | — |
 | M3 | Kyverno como código | — |
 | M4 | ADR: Kyverno vs Gatekeeper vs nativo | — |

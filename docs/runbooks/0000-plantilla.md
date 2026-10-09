@@ -20,3 +20,7 @@ Lo que se ve, con la salida literal del comando que lo muestra.
 
 ## Prevención
 Qué alerta, política o prueba evitaría que vuelva a pasar.
+
+
+localhost:5001/lab/nginx-unprivileged:1.27-alpine plataforma-worker/172.18.0.2
+localhost:5001/lab/nginx-unprivileged:1.27-alpine plataforma-worker2/172.18.0.3

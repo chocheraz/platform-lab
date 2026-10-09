@@ -1,0 +1,39 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: disallow-privileged
+  annotations:
+    policies.kyverno.io/title: "Prohibir contenedores privilegiados"
+    policies.kyverno.io/category: "Pod Security Standards (baseline)"
+    policies.kyverno.io/severity: "high"
+    policies.kyverno.io/description: >-
+      Un contenedor privilegiado tiene acceso casi total al nodo. Equivale a PSS baseline, control 'Privileged Containers'.
+spec:
+  # Audit: registra el incumplimiento en los PolicyReport, no bloquea.
+  validationActions: [Audit]
+  # Ignore: si Kyverno no responde, esta política no frena el clúster.
+  # Para una política que solo audita, bloquear el clúster no tiene sentido.
+  failurePolicy: Ignore
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [""]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [pods]
+    namespaceSelector:
+      matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values: [kube-system, kube-public, kube-node-lease, kyverno, local-path-storage]
+  variables:
+  - name: contenedores
+    expression: >-
+      object.spec.containers
+      + object.spec.?initContainers.orValue([])
+      + object.spec.?ephemeralContainers.orValue([])
+  validations:
+  - expression: >-
+      variables.contenedores.all(c, !c.?securityContext.?privileged.orValue(false))
+    messageExpression: >-
+      'Contenedores privilegiados no permitidos: ' +
+      variables.contenedores.filter(c, c.?securityContext.?privileged.orValue(false)).map(c, c.name).join(', ')

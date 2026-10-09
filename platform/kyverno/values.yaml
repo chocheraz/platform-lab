@@ -1,0 +1,45 @@
+# Valores de Helm para Kyverno 1.19.1 (chart 3.9.1) en el lab.
+# Solo se declara lo que cambia respecto a los valores por defecto del chart,
+# y cada cambio dice por qué. Consulta los defaults con:
+#   helm show values kyverno/kyverno --version 3.9.1
+
+admissionController:
+  # El admission controller está en el camino crítico de CADA petición que
+  # coincide con una política. Una sola réplica = un punto único de falla.
+  # Con replicas > 1 el chart crea automáticamente un PodDisruptionBudget.
+  replicas: 3
+  # El chart ya trae antiafinidad "preferida" por nodo. Esto además reparte
+  # las réplicas entre las zonas zona-a y zona-b de los workers.
+  topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: topology.kubernetes.io/zone
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/component: admission-controller
+
+# Estos tres no están en el camino de la admisión: si caen, se atrasan los
+# reportes o la limpieza, pero nadie queda bloqueado. Una réplica basta en el lab.
+# En producción: 2 réplicas cada uno (trabajan con elección de líder).
+backgroundController:
+  replicas: 1
+reportsController:
+  replicas: 1
+cleanupController:
+  replicas: 1
+
+config:
+  # Namespaces que el API server NUNCA envía al webhook de Kyverno.
+  # Es la primera línea de defensa contra el bloqueo del clúster: si Kyverno
+  # cae, lo que está aquí sigue funcionando. El propio namespace de Kyverno se
+  # excluye solo (excludeKyvernoNamespace: true, valor por defecto).
+  webhooks:
+    namespaceSelector:
+      matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values:
+        - kube-system
+        - kube-public
+        - kube-node-lease
+        - local-path-storage

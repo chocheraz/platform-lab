@@ -1,0 +1,47 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: "Prohibir el tag latest o la ausencia de tag"
+    policies.kyverno.io/category: "Buenas prácticas"
+    policies.kyverno.io/severity: "medium"
+    policies.kyverno.io/description: >-
+      Toda imagen debe llevar un tag explícito distinto de latest, o un digest. Un tag mutable hace que dos pods del mismo Deployment puedan correr binarios distintos.
+spec:
+  # Audit: registra el incumplimiento en los PolicyReport, no bloquea.
+  validationActions: [Audit]
+  # Ignore: si Kyverno no responde, esta política no frena el clúster.
+  # Para una política que solo audita, bloquear el clúster no tiene sentido.
+  failurePolicy: Ignore
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [""]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [pods]
+    namespaceSelector:
+      matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values: [kube-system, kube-public, kube-node-lease, kyverno, local-path-storage]
+  variables:
+  - name: contenedores
+    expression: >-
+      object.spec.containers
+      + object.spec.?initContainers.orValue([])
+      + object.spec.?ephemeralContainers.orValue([])
+  # El tag está DESPUÉS del último '/'. Así 'localhost:5001/app' (sin tag) no se
+  # confunde con un tag por el ':' del puerto del registry.
+  - name: malas
+    expression: >-
+      variables.contenedores.filter(c,
+        !c.image.contains('@') && (
+          !c.image.substring(c.image.lastIndexOf('/') + 1).contains(':') ||
+          c.image.endsWith(':latest')
+        )
+      ).map(c, c.name + ' (' + c.image + ')')
+  validations:
+  - expression: "size(variables.malas) == 0"
+    messageExpression: >-
+      'Imagen sin tag o con :latest: ' + variables.malas.join(', ')

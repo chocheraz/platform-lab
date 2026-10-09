@@ -1,0 +1,47 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: restrict-capabilities
+  annotations:
+    policies.kyverno.io/title: "Restringir capabilities agregadas"
+    policies.kyverno.io/category: "Pod Security Standards (baseline)"
+    policies.kyverno.io/severity: "medium"
+    policies.kyverno.io/description: >-
+      Solo se permite agregar las capabilities de Linux que PSS baseline considera seguras. NET_ADMIN, SYS_ADMIN y similares quedan fuera.
+spec:
+  # Audit: registra el incumplimiento en los PolicyReport, no bloquea.
+  validationActions: [Audit]
+  # Ignore: si Kyverno no responde, esta política no frena el clúster.
+  # Para una política que solo audita, bloquear el clúster no tiene sentido.
+  failurePolicy: Ignore
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [""]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [pods]
+    namespaceSelector:
+      matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values: [kube-system, kube-public, kube-node-lease, kyverno, local-path-storage]
+  variables:
+  - name: contenedores
+    expression: >-
+      object.spec.containers
+      + object.spec.?initContainers.orValue([])
+      + object.spec.?ephemeralContainers.orValue([])
+  # Lista de PSS baseline (Kubernetes Pod Security Standards, control "Capabilities").
+  - name: permitidas
+    expression: >-
+      ['AUDIT_WRITE', 'CHOWN', 'DAC_OVERRIDE', 'FOWNER', 'FSETID', 'KILL', 'MKNOD',
+       'NET_BIND_SERVICE', 'SETFCAP', 'SETGID', 'SETPCAP', 'SETUID', 'SYS_CHROOT']
+  - name: agregadasNoPermitidas
+    expression: >-
+      variables.contenedores.map(c,
+        c.?securityContext.?capabilities.?add.orValue([]).filter(cap, !(cap in variables.permitidas))
+      ).flatten()
+  validations:
+  - expression: "size(variables.agregadasNoPermitidas) == 0"
+    messageExpression: >-
+      'Capabilities no permitidas: ' + variables.agregadasNoPermitidas.join(', ')

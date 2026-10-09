@@ -1,0 +1,40 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: require-memory-limits
+  annotations:
+    policies.kyverno.io/title: "Exigir límite de memoria"
+    policies.kyverno.io/category: "Buenas prácticas"
+    policies.kyverno.io/severity: "medium"
+    policies.kyverno.io/description: >-
+      Cada contenedor debe declarar resources.limits.memory. Sin límite, un contenedor con una fuga de memoria puede presionar al nodo y provocar desalojos de cargas ajenas.
+spec:
+  # Audit: registra el incumplimiento en los PolicyReport, no bloquea.
+  validationActions: [Audit]
+  # Ignore: si Kyverno no responde, esta política no frena el clúster.
+  # Para una política que solo audita, bloquear el clúster no tiene sentido.
+  failurePolicy: Ignore
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [""]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [pods]
+    namespaceSelector:
+      matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values: [kube-system, kube-public, kube-node-lease, kyverno, local-path-storage]
+  variables:
+  - name: contenedores
+    expression: >-
+      object.spec.containers + object.spec.?initContainers.orValue([])
+  validations:
+  - expression: >-
+      variables.contenedores.all(c, has(c.resources) && has(c.resources.limits)
+        && 'memory' in c.resources.limits)
+    messageExpression: >-
+      'Sin resources.limits.memory: ' +
+      variables.contenedores.filter(c,
+        !(has(c.resources) && has(c.resources.limits) && 'memory' in c.resources.limits)
+      ).map(c, c.name).join(', ')

@@ -1,0 +1,44 @@
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: require-run-as-non-root
+  annotations:
+    policies.kyverno.io/title: "Exigir ejecución como no root"
+    policies.kyverno.io/category: "Pod Security Standards (restricted)"
+    policies.kyverno.io/severity: "medium"
+    policies.kyverno.io/description: >-
+      El pod debe declarar runAsNonRoot: true, a nivel de pod o en cada contenedor, y ningún contenedor puede anularlo con false. Equivale a PSS restricted, control 'Running as Non-root'.
+spec:
+  # Audit: registra el incumplimiento en los PolicyReport, no bloquea.
+  validationActions: [Audit]
+  # Ignore: si Kyverno no responde, esta política no frena el clúster.
+  # Para una política que solo audita, bloquear el clúster no tiene sentido.
+  failurePolicy: Ignore
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [""]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [pods]
+    namespaceSelector:
+      matchExpressions:
+      - key: kubernetes.io/metadata.name
+        operator: NotIn
+        values: [kube-system, kube-public, kube-node-lease, kyverno, local-path-storage]
+  variables:
+  - name: contenedores
+    expression: >-
+      object.spec.containers
+      + object.spec.?initContainers.orValue([])
+      + object.spec.?ephemeralContainers.orValue([])
+  - name: podNoRoot
+    expression: "object.spec.?securityContext.?runAsNonRoot.orValue(false)"
+  validations:
+  - expression: >-
+      variables.contenedores.all(c,
+        c.?securityContext.?runAsNonRoot.orValue(variables.podNoRoot) == true)
+    messageExpression: >-
+      'Sin runAsNonRoot: true (en el pod o en el contenedor): ' +
+      variables.contenedores
+        .filter(c, c.?securityContext.?runAsNonRoot.orValue(variables.podNoRoot) != true)
+        .map(c, c.name).join(', ')

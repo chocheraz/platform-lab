@@ -1,0 +1,11 @@
+# Namespace piloto del Lab 1.4: el primero en pasar a Enforce.
+# Se aplica a mano en el lab, no con `make seed`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+labels:
+- pairs:
+    curso.lab/modulo: "m1"
+  includeSelectors: false
+resources:
+- namespace.yaml
+- piloto-ok.yaml

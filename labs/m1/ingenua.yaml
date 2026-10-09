@@ -1,0 +1,18 @@
+# Lab 1.2 — Primera versión, deliberadamente ingenua. NO se aplica al clúster.
+# Tiene dos defectos que el lab te hace descubrir con el CLI.
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: privilegiados-ingenua
+spec:
+  validationActions: [Audit]
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [""]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [pods]
+  validations:
+  - expression: "object.spec.containers.all(c, c.securityContext.privileged == false)"
+    message: "Contenedores privilegiados no permitidos"
+    

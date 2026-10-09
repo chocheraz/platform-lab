@@ -1,0 +1,37 @@
+# Variante "enforce" de las mismas políticas, generada desde la base.
+# Una sola fuente de verdad: la lógica CEL vive en ../validating y aquí solo cambia
+# QUÉ hacer con el incumplimiento y DÓNDE.
+#
+#   - validationActions: Deny          → bloquea en admisión
+#   - failurePolicy: Fail              → si Kyverno no responde, también bloquea (ver ruptura 1.R)
+#   - background deshabilitado         → la base (Audit) ya reporta; así no se duplican resultados
+#   - solo namespaces con la etiqueta  politicas.curso.lab/modo=enforce
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ../validating
+nameSuffix: -enforce
+labels:
+- pairs:
+    politicas.curso.lab/accion: enforce
+  includeSelectors: false
+patches:
+- target:
+    group: policies.kyverno.io
+    kind: ValidatingPolicy
+  patch: |-
+    - op: replace
+      path: /spec/validationActions
+      value: [Deny]
+    - op: replace
+      path: /spec/failurePolicy
+      value: Fail
+    - op: add
+      path: /spec/evaluation
+      value:
+        background:
+          enabled: false
+    - op: add
+      path: /spec/matchConstraints/namespaceSelector/matchLabels
+      value:
+        politicas.curso.lab/modo: enforce

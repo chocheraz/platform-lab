@@ -2,3 +2,4 @@
 *.kubeconfig
 .env.local
 tmp/
+tmp-*.yaml
